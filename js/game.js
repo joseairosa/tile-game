@@ -110,10 +110,14 @@
 
         var moved_on_x = 0;
         var moved_on_y = 0;
+
         // Add callbacks to each of the tiles
         $(".tiles")
             .mousedown(function (md_e) {
 //                console.log("mousedown");
+
+                moved_on_x = 0;
+                moved_on_y = 0;
 
                 is_being_dragged = true;
 
@@ -174,14 +178,13 @@
                 }
             })
             .mouseup(function (mu_e) {
-//                console.log("mouseup");
                 if (move_instructions != false) {
                     TG.execute_move(function (index, instruction) {
 //                        console.log("new_index->" + instruction.to_i);
 //                        console.log(move_to);
 //                        console.log("instruction.i->" + instruction.i);
 //                        console.log("tile->" + tm[instruction.i]);
-                        if((instruction.a == "x" && Math.abs(moved_on_x) < (tile_size.w/2)) || (instruction.a == "y" && Math.abs(moved_on_y) < (tile_size.h/2))) {
+                        if((instruction.a == "x" && Math.abs(moved_on_x) < (tile_size.w/2) && Math.abs(moved_on_x) > 0) || (instruction.a == "y" && Math.abs(moved_on_y) < (tile_size.h/2) && Math.abs(moved_on_y) > 0)) {
                             // Get tile inital position
                             var initial_position = TG.get_position_reference(instruction.i);
                             // Animate the tile to its initial position
