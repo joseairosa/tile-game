@@ -108,6 +108,8 @@
             }
         });
 
+        var moved_on_x = 0;
+        var moved_on_y = 0;
         // Add callbacks to each of the tiles
         $(".tiles")
             .mousedown(function (md_e) {
@@ -131,8 +133,9 @@
 //                            console.log("tile->" + tm[instruction.i]);
 
                             // Calculate the movement of the tiles
-                            var moved_on_x = (mm_e.pageX - md_e.pageX);
-                            var moved_on_y = (mm_e.pageY - md_e.pageY);
+                            moved_on_x = (mm_e.pageX - md_e.pageX);
+                            moved_on_y = (mm_e.pageY - md_e.pageY);
+
                             var p = {
                                 x:instruction.a == "y" ? initial_position.x : initial_position.x + (moved_on_x),
                                 y:instruction.a == "x" ? initial_position.y : initial_position.y + (moved_on_y)
@@ -170,26 +173,35 @@
                     });
                 }
             })
-            .mouseup(function () {
+            .mouseup(function (mu_e) {
 //                console.log("mouseup");
                 if (move_instructions != false) {
                     TG.execute_move(function (index, instruction) {
-                        // Get the position to where this tile needs to move to
-                        var move_to = TG.get_position_reference(instruction.to_i);
 //                        console.log("new_index->" + instruction.to_i);
 //                        console.log(move_to);
 //                        console.log("instruction.i->" + instruction.i);
 //                        console.log("tile->" + tm[instruction.i]);
-
-                        // Animate the tile to its new position
-                        $('div[tile="' + tm[instruction.i] + '"]').animate({
-                            top:move_to.y,
-                            left:move_to.x
-                        }, 150);
-                        // Swap indexes on the tile matrix
-                        var tmp = tm[instruction.to_i];
-                        tm[instruction.to_i] = tm[instruction.i];
-                        tm[instruction.i] = tmp;
+                        if((instruction.a == "x" && Math.abs(moved_on_x) < (tile_size.w/2)) || (instruction.a == "y" && Math.abs(moved_on_y) < (tile_size.h/2))) {
+                            // Get tile inital position
+                            var initial_position = TG.get_position_reference(instruction.i);
+                            // Animate the tile to its initial position
+                            $('div[tile="' + tm[instruction.i] + '"]').animate({
+                                top:initial_position.y,
+                                left:initial_position.x
+                            }, 100);
+                        } else {
+                            // Get the position to where this tile needs to move to
+                            var move_to = TG.get_position_reference(instruction.to_i);
+                            // Animate the tile to its new position
+                            $('div[tile="' + tm[instruction.i] + '"]').animate({
+                                top:move_to.y,
+                                left:move_to.x
+                            }, 100);
+                            // Swap indexes on the tile matrix
+                            var tmp = tm[instruction.to_i];
+                            tm[instruction.to_i] = tm[instruction.i];
+                            tm[instruction.i] = tmp;
+                        }
                     });
                     // Unbind the mousemove event as we don't need it anymore. It's always a good idea to clean the house
                     // after the party!
