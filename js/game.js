@@ -35,9 +35,9 @@
         tile_size.w = (image_size.w / tm_size.x);
         tile_size.h = (image_size.h / tm_size.y);
 
-        TG.fill_matrix();
-        TG.render_board(e);
-        TG.shuffle_tiles();
+        TG.fillMatrix();
+        TG.renderBoard(e);
+        TG.shuffleTiles();
     };
 
     TG.iterate = function (fn) {
@@ -50,7 +50,7 @@
         }
     };
 
-    TG.fill_matrix = function () {
+    TG.fillMatrix = function () {
         TG.iterate(function (index, x, y) {
             tm_position_cache.push({x:(x * tile_size.w), y:(y * tile_size.h)});
             tm.push(index);
@@ -58,7 +58,7 @@
     };
 
     // Used the Fisher-Yates randomizing shuffle algorithm
-    TG.shuffle_tiles = function () {
+    TG.shuffleTiles = function () {
         var i = tm.length;
         if (i == 0) return false;
         while (--i) {
@@ -71,7 +71,7 @@
 
         // Apply the shuffled board and set the tiles
         for (var ii = 0; ii < tm.length; ii++) {
-            axis = TG.get_position_reference(tm.indexOf(ii));
+            axis = TG.getPositionReference(tm.indexOf(ii));
             $('div[tile="' + ii + '"]').css({
                 left:axis.x,
                 top:axis.y
@@ -79,7 +79,7 @@
         }
     };
 
-    TG.render_board = function () {
+    TG.renderBoard = function () {
 
         // Hide our board while we add the tiles and apply the pre-processed shuffle
         $(gb_selector).css("display", "none").width(image_size.w).height(image_size.y);
@@ -114,27 +114,21 @@
         // Add callbacks to each of the tiles
         $(".tiles")
             .mousedown(function (md_e) {
-//                console.log("mousedown");
 
                 moved_on_x = 0;
                 moved_on_y = 0;
 
                 is_being_dragged = true;
 
-                move_instructions = TG.get_move_instructions($(this).attr("tile"));
+                move_instructions = TG.getMoveInstructions($(this).attr("tile"));
 
                 if (move_instructions != false) {
                     // Bind a mousemove event onto our gameboard to get access to the mouse coordinates inside it
                     $(gb_selector).bind('mousemove.move_tile', function (mm_e) {
 
-                        TG.execute_move(function (index, instruction) {
+                        TG.executeMove(function (index, instruction) {
                             // Get the position to where this tile needs to move to
-                            var initial_position = TG.get_position_reference(instruction.i);
-//                            var move_to = TG.get_position_reference(instruction.to_i);
-//                            console.log("new_index->" + instruction.to_i);
-//                            console.log(move_to);
-//                            console.log("instruction.i->" + instruction.i);
-//                            console.log("tile->" + tm[instruction.i]);
+                            var initial_position = TG.getPositionReference(instruction.i);
 
                             // Calculate the movement of the tiles
                             moved_on_x = (mm_e.pageX - md_e.pageX);
@@ -164,9 +158,6 @@
                             if (p.x <= 0) p.x = 0;
                             if (p.y <= 0) p.y = 0;
 
-//                            console.log(((mm_e.pageX-md_e.pageX)*instruction.d));
-//                            console.log(((mm_e.pageY-md_e.pageY)*instruction.d));
-//                            console.log("x-> "+p.x+", y-> "+ p.y);
                             // Animate the tile to its new position
                             $('div[tile="' + tm[instruction.i] + '"]').css({
                                 top:p.y,
@@ -179,14 +170,10 @@
             })
             .mouseup(function (mu_e) {
                 if (move_instructions != false) {
-                    TG.execute_move(function (index, instruction) {
-//                        console.log("new_index->" + instruction.to_i);
-//                        console.log(move_to);
-//                        console.log("instruction.i->" + instruction.i);
-//                        console.log("tile->" + tm[instruction.i]);
+                    TG.executeMove(function (index, instruction) {
                         if((instruction.a == "x" && Math.abs(moved_on_x) < (tile_size.w/2) && Math.abs(moved_on_x) > 0) || (instruction.a == "y" && Math.abs(moved_on_y) < (tile_size.h/2) && Math.abs(moved_on_y) > 0)) {
                             // Get tile inital position
-                            var initial_position = TG.get_position_reference(instruction.i);
+                            var initial_position = TG.getPositionReference(instruction.i);
                             // Animate the tile to its initial position
                             $('div[tile="' + tm[instruction.i] + '"]').animate({
                                 top:initial_position.y,
@@ -194,7 +181,7 @@
                             }, 100);
                         } else {
                             // Get the position to where this tile needs to move to
-                            var move_to = TG.get_position_reference(instruction.to_i);
+                            var move_to = TG.getPositionReference(instruction.to_i);
                             // Animate the tile to its new position
                             $('div[tile="' + tm[instruction.i] + '"]').animate({
                                 top:move_to.y,
@@ -222,20 +209,20 @@
     // @param index
     //
     // @return
-    TG.get_position_reference = function (index) {
+    TG.getPositionReference = function (index) {
         return tm_position_cache[index];
     };
 
     // Return the index of the tile from its current axis
-    TG.get_index_reference_by_axis = function (x, y) {
+    TG.getIndexReferenceByAxis = function (x, y) {
         return y * tm_size.x + x;
     };
 
-    TG.get_blank_spot = function () {
-        return TG.get_position_reference(tm.indexOf(tm.length - 1));
+    TG.getBlankSpot = function () {
+        return TG.getPositionReference(tm.indexOf(tm.length - 1));
     };
 
-    TG.get_tile_reference_from_x = function (axis) {
+    TG.getTileReferenceFromX = function (axis) {
         return (parseInt(axis) / parseInt(tile_size.w));
     };
 
@@ -243,23 +230,19 @@
         return (parseInt(axis) / parseInt(tile_size.h));
     };
 
-    TG.execute_move = function (fn) {
-//        var instructions = TG.get_move_instructions(co.attr("tile"));
-//        console.log(instructions);
+    TG.executeMove = function (fn) {
         if (move_instructions != false) {
-//            console.log(tm);
             for (var key in move_instructions) {
                 fn(key, move_instructions[key]);
             }
-//            console.log(tm);
         }
     };
 
-    TG.get_move_instructions = function (i) {
+    TG.getMoveInstructions = function (i) {
 
         var index = tm.indexOf(parseInt(i));
-        clicked_ref = TG.get_position_reference(index);
-        blank_ref = TG.get_blank_spot();
+        clicked_ref = TG.getPositionReference(index);
+        blank_ref = TG.getBlankSpot();
 
         is_x_move = !!(clicked_ref.y == blank_ref.y);
         is_y_move = !!(clicked_ref.x == blank_ref.x);
@@ -272,16 +255,6 @@
 
         move_to_right = !!(clicked_ref.x - blank_ref.x < 0);
         move_to_bottom = !!(clicked_ref.y - blank_ref.y < 0);
-
-//        console.log("is_x_move -> " + is_x_move);
-//        console.log("is_y_move -> " + is_y_move);
-//        console.log("move right -> " + move_to_right);
-//        console.log("move bottom -> " + move_to_bottom);
-//
-//        console.log(TG.get_tile_reference_from_x(clicked_ref.x));
-//        console.log(TG.get_tile_reference_from_y(clicked_ref.y));
-//        console.log(TG.get_tile_reference_from_x(blank_ref.x));
-//        console.log(TG.get_tile_reference_from_y(blank_ref.y));
 
         var clicked_ref_x = TG.get_tile_reference_from_y(clicked_ref.x);
         var clicked_ref_y = TG.get_tile_reference_from_y(clicked_ref.y);
@@ -296,8 +269,8 @@
                     tmp_array_move.push({
                         a:"x",
                         d:1,
-                        i:TG.get_index_reference_by_axis(ii, clicked_ref_y),
-                        to_i:TG.get_index_reference_by_axis(ii + 1, clicked_ref_y),
+                        i:TG.getIndexReferenceByAxis(ii, clicked_ref_y),
+                        to_i:TG.getIndexReferenceByAxis(ii + 1, clicked_ref_y),
                         x:ii,
                         y:clicked_ref_y,
                         to_x:ii + 1,
@@ -305,12 +278,12 @@
                     });
                 }
             } else {
-                for (var ii = TG.get_tile_reference_from_x(clicked_ref.x); ii > TG.get_tile_reference_from_x(blank_ref.x); ii--) {
+                for (var ii = TG.getTileReferenceFromX(clicked_ref.x); ii > TG.getTileReferenceFromX(blank_ref.x); ii--) {
                     tmp_array_move.push({
                         a:"x",
                         d:-1,
-                        i:TG.get_index_reference_by_axis(ii, clicked_ref_y),
-                        to_i:TG.get_index_reference_by_axis(ii - 1, clicked_ref_y),
+                        i:TG.getIndexReferenceByAxis(ii, clicked_ref_y),
+                        to_i:TG.getIndexReferenceByAxis(ii - 1, clicked_ref_y),
                         x:ii,
                         y:clicked_ref_y,
                         to_x:ii - 1,
@@ -326,8 +299,8 @@
                     tmp_array_move.push({
                         a:"y",
                         d:1,
-                        i:TG.get_index_reference_by_axis(clicked_ref_x, ii),
-                        to_i:TG.get_index_reference_by_axis(clicked_ref_x, ii + 1),
+                        i:TG.getIndexReferenceByAxis(clicked_ref_x, ii),
+                        to_i:TG.getIndexReferenceByAxis(clicked_ref_x, ii + 1),
                         x:clicked_ref_x,
                         y:ii,
                         to_x:clicked_ref_x,
@@ -339,8 +312,8 @@
                     tmp_array_move.push({
                         a:"y",
                         d:-1,
-                        i:TG.get_index_reference_by_axis(clicked_ref_x, ii),
-                        to_i:TG.get_index_reference_by_axis(clicked_ref_x, ii - 1),
+                        i:TG.getIndexReferenceByAxis(clicked_ref_x, ii),
+                        to_i:TG.getIndexReferenceByAxis(clicked_ref_x, ii - 1),
                         x:clicked_ref_x,
                         y:ii,
                         to_x:clicked_ref_x,
