@@ -209,15 +209,12 @@ $app_name = idx($app_info, 'name', '');
     <!--[if lt IE 7]><p class=chromeframe>Your browser is <em>ancient!</em> <a href="http://browsehappy.com/">Upgrade to a
         different browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">install Google Chrome Frame</a>
         to experience this site.</p><![endif]-->
-        <header>
 
-        </header>
-        <div role="main" id="gameboard">
+        <header></header>
 
-        </div>
-        <footer>
+        <div role="main" id="gameboard"></div>
 
-        </footer>
+        <footer></footer>
 
 
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
@@ -228,7 +225,7 @@ $app_name = idx($app_info, 'name', '');
         <script src="js/script.js"></script>
         <script src="js/game.js"></script>
 
-        <script>
+        <script type="text/javascript">
             TG.init("gameboard");
         </script>
   </body>

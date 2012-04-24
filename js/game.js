@@ -20,8 +20,16 @@
     var tile_size = {w:0, h:0};
     // Size of the background image
     var image_size = {w:540, h:540};
+    // Drag flag
+    var is_being_dragged = false;
+    // Gameboard css selector (noramlly its ID)
+    var gb_selector = "";
+
+    var move_instructions = {};
 
     TG.init = function (e) {
+
+        gb_selector = "#" + e;
 
         // Calculate the width and height based on the image width and height and number of tiles on the x and y axis
         tile_size.w = (image_size.w / tm_size.x);
@@ -71,10 +79,10 @@
         }
     };
 
-    TG.render_board = function (e) {
+    TG.render_board = function () {
 
         // Hide our board while we add the tiles and apply the pre-processed shuffle
-        $("#" + e).css("display", "none").width(image_size.w).height(image_size.y);
+        $(gb_selector).css("display", "none").width(image_size.w).height(image_size.y);
 
         // Render
         TG.iterate(function (index, x, y) {
@@ -82,7 +90,7 @@
                 .attr({tile:index})
                 .width(tile_size.w)
                 .height(tile_size.h);
-            $("#" + e).append(new_tile);
+            $(gb_selector).append(new_tile);
             // Make sure we don't fill the last tile as it will be our freespace
             if (index != (tm_size.x * tm_size.y) - 1) {
                 var background_position = (x == 0 && y == 0 ? "0px 0px" : "-" + (tile_size.h * y) + "px -" + (tile_size.w * x) + "px");
@@ -101,12 +109,97 @@
         });
 
         // Add callbacks to each of the tiles
-        $(".tiles").click(function () {
-            TG.make_move($(this));
-        });
+        $(".tiles")
+            .mousedown(function (md_e) {
+//                console.log("mousedown");
+
+                is_being_dragged = true;
+
+                move_instructions = TG.get_move_instructions($(this).attr("tile"));
+
+                if (move_instructions != false) {
+                    // Bind a mousemove event onto our gameboard to get access to the mouse coordinates inside it
+                    $(gb_selector).bind('mousemove.move_tile', function (mm_e) {
+
+                        TG.execute_move(function (index, instruction) {
+                            // Get the position to where this tile needs to move to
+                            var initial_position = TG.get_position_reference(instruction.i);
+//                            var move_to = TG.get_position_reference(instruction.to_i);
+//                            console.log("new_index->" + instruction.to_i);
+//                            console.log(move_to);
+//                            console.log("instruction.i->" + instruction.i);
+//                            console.log("tile->" + tm[instruction.i]);
+
+                            // Calculate the movement of the tiles
+                            var moved_on_x = (mm_e.pageX - md_e.pageX);
+                            var moved_on_y = (mm_e.pageY - md_e.pageY);
+                            var p = {
+                                x:instruction.a == "y" ? initial_position.x : initial_position.x + (moved_on_x),
+                                y:instruction.a == "x" ? initial_position.y : initial_position.y + (moved_on_y)
+                            };
+
+                            // Make sure the user is not able to move the tile in the wrong direction and more than he
+                            // is able to, normally, more than one gap
+                            if (instruction.a == "x" && instruction.d < 0 && p.x > initial_position.x) p.x = initial_position.x;
+                            else if (instruction.a == "x" && instruction.d > 0 && p.x < initial_position.x) p.x = initial_position.x;
+                            else if (instruction.a == "x" && instruction.d < 0 && Math.abs(moved_on_x) > tile_size.w) p.x = initial_position.x-tile_size.w;
+                            else if (instruction.a == "x" && instruction.d > 0 && Math.abs(moved_on_x) > tile_size.w) p.x = initial_position.x+tile_size.w;
+
+                            if (instruction.a == "y" && instruction.d < 0 && p.y > initial_position.y) p.y = initial_position.y;
+                            else if (instruction.a == "y" && instruction.d > 0 && p.y < initial_position.y) p.y = initial_position.y;
+                            else if (instruction.a == "y" && instruction.d < 0 && Math.abs(moved_on_y) > tile_size.h) p.y = initial_position.y-tile_size.h;
+                            else if (instruction.a == "y" && instruction.d > 0 && Math.abs(moved_on_y) > tile_size.h) p.y = initial_position.y+tile_size.h;
+
+
+                            // Make sure the user is not able to move the tile outside gameboard limits
+                            if (p.x >= image_size.w - tile_size.w) p.x = image_size.w - tile_size.w;
+                            if (p.y >= image_size.h - tile_size.h) p.y = image_size.h - tile_size.h;
+                            if (p.x <= 0) p.x = 0;
+                            if (p.y <= 0) p.y = 0;
+
+//                            console.log(((mm_e.pageX-md_e.pageX)*instruction.d));
+//                            console.log(((mm_e.pageY-md_e.pageY)*instruction.d));
+//                            console.log("x-> "+p.x+", y-> "+ p.y);
+                            // Animate the tile to its new position
+                            $('div[tile="' + tm[instruction.i] + '"]').css({
+                                top:p.y,
+                                left:p.x
+                            });
+                        });
+
+                    });
+                }
+            })
+            .mouseup(function () {
+//                console.log("mouseup");
+                if (move_instructions != false) {
+                    TG.execute_move(function (index, instruction) {
+                        // Get the position to where this tile needs to move to
+                        var move_to = TG.get_position_reference(instruction.to_i);
+//                        console.log("new_index->" + instruction.to_i);
+//                        console.log(move_to);
+//                        console.log("instruction.i->" + instruction.i);
+//                        console.log("tile->" + tm[instruction.i]);
+
+                        // Animate the tile to its new position
+                        $('div[tile="' + tm[instruction.i] + '"]').animate({
+                            top:move_to.y,
+                            left:move_to.x
+                        }, 150);
+                        // Swap indexes on the tile matrix
+                        var tmp = tm[instruction.to_i];
+                        tm[instruction.to_i] = tm[instruction.i];
+                        tm[instruction.i] = tmp;
+                    });
+                    // Unbind the mousemove event as we don't need it anymore. It's always a good idea to clean the house
+                    // after the party!
+                    $(gb_selector).unbind('mousemove.move_tile');
+                }
+                is_being_dragged = false;
+            });
 
         // Show our board again
-        $("#" + e).css("display", "block");
+        $(gb_selector).css("display", "block");
     };
 
     // For a given index get the tile position
@@ -135,30 +228,15 @@
         return (parseInt(axis) / parseInt(tile_size.h));
     };
 
-    TG.make_move = function (co) {
-        var instructions = TG.get_move_instructions(co.attr("tile"));
-        console.log(instructions);
-        if (instructions != false) {
-            console.log(tm);
-            for (var key in instructions) {
-                var instruction = instructions[key];
-                // Get the position to where this tile needs to move to
-                var move_to = TG.get_position_reference(instruction.to_i);
-                console.log("new_index->" + instruction.to_i);
-                console.log(move_to);
-                console.log("instruction.i->" + instruction.i);
-                console.log("tile->" + tm[instruction.i]);
-                // Animate the tile to its new position
-                $('div[tile="' + tm[instruction.i] + '"]').animate({
-                    top:move_to.y,
-                    left:move_to.x
-                }, 150);
-                // Swap indexes on the tile matrix
-                var tmp = tm[instruction.to_i];
-                tm[instruction.to_i] = tm[instruction.i];
-                tm[instruction.i] = tmp;
+    TG.execute_move = function (fn) {
+//        var instructions = TG.get_move_instructions(co.attr("tile"));
+//        console.log(instructions);
+        if (move_instructions != false) {
+//            console.log(tm);
+            for (var key in move_instructions) {
+                fn(key, move_instructions[key]);
             }
-            console.log(tm);
+//            console.log(tm);
         }
     };
 
@@ -180,15 +258,15 @@
         move_to_right = !!(clicked_ref.x - blank_ref.x < 0);
         move_to_bottom = !!(clicked_ref.y - blank_ref.y < 0);
 
-        console.log("is_x_move -> " + is_x_move);
-        console.log("is_y_move -> " + is_y_move);
-        console.log("move right -> " + move_to_right);
-        console.log("move bottom -> " + move_to_bottom);
-
-        console.log(TG.get_tile_reference_from_x(clicked_ref.x));
-        console.log(TG.get_tile_reference_from_y(clicked_ref.y));
-        console.log(TG.get_tile_reference_from_x(blank_ref.x));
-        console.log(TG.get_tile_reference_from_y(blank_ref.y));
+//        console.log("is_x_move -> " + is_x_move);
+//        console.log("is_y_move -> " + is_y_move);
+//        console.log("move right -> " + move_to_right);
+//        console.log("move bottom -> " + move_to_bottom);
+//
+//        console.log(TG.get_tile_reference_from_x(clicked_ref.x));
+//        console.log(TG.get_tile_reference_from_y(clicked_ref.y));
+//        console.log(TG.get_tile_reference_from_x(blank_ref.x));
+//        console.log(TG.get_tile_reference_from_y(blank_ref.y));
 
         var clicked_ref_x = TG.get_tile_reference_from_y(clicked_ref.x);
         var clicked_ref_y = TG.get_tile_reference_from_y(clicked_ref.y);
@@ -201,6 +279,7 @@
             if (move_to_right) {
                 for (var ii = clicked_ref_x; ii < blank_ref_x; ii++) {
                     tmp_array_move.push({
+                        a:"x",
                         d:1,
                         i:TG.get_index_reference_by_axis(ii, clicked_ref_y),
                         to_i:TG.get_index_reference_by_axis(ii + 1, clicked_ref_y),
@@ -213,6 +292,7 @@
             } else {
                 for (var ii = TG.get_tile_reference_from_x(clicked_ref.x); ii > TG.get_tile_reference_from_x(blank_ref.x); ii--) {
                     tmp_array_move.push({
+                        a:"x",
                         d:-1,
                         i:TG.get_index_reference_by_axis(ii, clicked_ref_y),
                         to_i:TG.get_index_reference_by_axis(ii - 1, clicked_ref_y),
@@ -229,6 +309,7 @@
             if (move_to_bottom) {
                 for (var ii = clicked_ref_y; ii < blank_ref_y; ii++) {
                     tmp_array_move.push({
+                        a:"y",
                         d:1,
                         i:TG.get_index_reference_by_axis(clicked_ref_x, ii),
                         to_i:TG.get_index_reference_by_axis(clicked_ref_x, ii + 1),
@@ -241,6 +322,7 @@
             } else {
                 for (var ii = clicked_ref_y; ii > blank_ref_y; ii--) {
                     tmp_array_move.push({
+                        a:"y",
                         d:-1,
                         i:TG.get_index_reference_by_axis(clicked_ref_x, ii),
                         to_i:TG.get_index_reference_by_axis(clicked_ref_x, ii - 1),
