@@ -283,7 +283,7 @@
         ts_e.preventDefault();
         TG.onDown(ts_e, function (ts_e) {
             // Bind a mousemove event onto our gameboard to get access to the mouse coordinates inside it
-            $(gb_selector).bind('touchmove.move_tile', function (tm_e) {
+            $(gb_selector).bind('touchmove', function (tm_e) {
 
                 tm_e.preventDefault();
 
@@ -301,7 +301,7 @@
         TG.onUp(te_e, function () {
             // Unbind the touchmove event as we don't need it anymore. It's always a good idea to clean the house
             // after the iOS party!
-            $(gb_selector).unbind('touchmove.move_tile');
+            $(gb_selector).unbind('touchmove');
         });
     };
 
