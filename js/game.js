@@ -30,12 +30,10 @@
     var plays_counter = 0;
     // Container for the clicked element
     var clicked_element = {};
-
-    var moved_on_x = 0;
-    var moved_on_y = 0;
-
-    var asd = 0;
-    var asd2 = 0;
+    // Container for the updated movement amount during a drag action (relative to the game board)
+    var moved_amount = {x:0,y:0};
+    // Container for the initial position when we click on a tile (relative to the game board)
+    var initial_click_position = {x:0,y:0};
 
     /**
      * Initialize our environment and position the tiles in a random position (shuffle)
@@ -167,8 +165,8 @@
     };
 
     TG.onDown = function (md_e, fn) {
-        moved_on_x = 0;
-        moved_on_y = 0;
+        moved_amount.x = 0;
+        moved_amount.y = 0;
 
         is_being_dragged = true;
 
@@ -185,21 +183,21 @@
             var initial_position = TG.getPositionReference(instruction.i);
 
             var p = {
-                x:instruction.a == "y" ? initial_position.x : initial_position.x + (moved_on_x),
-                y:instruction.a == "x" ? initial_position.y : initial_position.y + (moved_on_y)
+                x:instruction.a == "y" ? initial_position.x : initial_position.x + (moved_amount.x),
+                y:instruction.a == "x" ? initial_position.y : initial_position.y + (moved_amount.y)
             };
 
             // Make sure the user is not able to move the tile in the wrong direction and more than he
             // is able to (more than one gap)
             if (instruction.a == "x" && instruction.d < 0 && p.x > initial_position.x) p.x = initial_position.x;
             else if (instruction.a == "x" && instruction.d > 0 && p.x < initial_position.x) p.x = initial_position.x;
-            else if (instruction.a == "x" && instruction.d < 0 && Math.abs(moved_on_x) > tile_size.w) p.x = initial_position.x - tile_size.w;
-            else if (instruction.a == "x" && instruction.d > 0 && Math.abs(moved_on_x) > tile_size.w) p.x = initial_position.x + tile_size.w;
+            else if (instruction.a == "x" && instruction.d < 0 && Math.abs(moved_amount.x) > tile_size.w) p.x = initial_position.x - tile_size.w;
+            else if (instruction.a == "x" && instruction.d > 0 && Math.abs(moved_amount.x) > tile_size.w) p.x = initial_position.x + tile_size.w;
 
             if (instruction.a == "y" && instruction.d < 0 && p.y > initial_position.y) p.y = initial_position.y;
             else if (instruction.a == "y" && instruction.d > 0 && p.y < initial_position.y) p.y = initial_position.y;
-            else if (instruction.a == "y" && instruction.d < 0 && Math.abs(moved_on_y) > tile_size.h) p.y = initial_position.y - tile_size.h;
-            else if (instruction.a == "y" && instruction.d > 0 && Math.abs(moved_on_y) > tile_size.h) p.y = initial_position.y + tile_size.h;
+            else if (instruction.a == "y" && instruction.d < 0 && Math.abs(moved_amount.y) > tile_size.h) p.y = initial_position.y - tile_size.h;
+            else if (instruction.a == "y" && instruction.d > 0 && Math.abs(moved_amount.y) > tile_size.h) p.y = initial_position.y + tile_size.h;
 
 
             // Make sure the user is not able to move the tile outside gameboard limits
@@ -228,7 +226,7 @@
                 // rollback (all the tiles affected) to the initial position.
                 // If we passed more than halfway we can safely move the affected tiles to the new position
                 // and update the tile matrix with the movement.
-                if ((instruction.a == "x" && Math.abs(moved_on_x) < (tile_size.w / 2) && Math.abs(moved_on_x) > 0) || (instruction.a == "y" && Math.abs(moved_on_y) < (tile_size.h / 2) && Math.abs(moved_on_y) > 0)) {
+                if ((instruction.a == "x" && Math.abs(moved_amount.x) < (tile_size.w / 2) && Math.abs(moved_amount.x) > 0) || (instruction.a == "y" && Math.abs(moved_amount.y) < (tile_size.h / 2) && Math.abs(moved_amount.y) > 0)) {
                     // Get tile inital position
                     var initial_position = TG.getPositionReference(instruction.i);
                     // Animate the tile to its initial position
@@ -261,13 +259,15 @@
     };
 
     TG.onMouseDown = function (md_e) {
+        initial_click_position.x = md_e.pageX;
+        initial_click_position.y = md_e.pageY;
         TG.onDown(md_e, function () {
             // Bind a mousemove event onto our gameboard to get access to the mouse coordinates inside it
             $(gb_selector).bind('mousemove.move_tile', function (mm_e) {
 
                 // Calculate the movement of the tiles
-                moved_on_x = (mm_e.pageX - md_e.pageX);
-                moved_on_y = (mm_e.pageY - md_e.pageY);
+                moved_amount.x = (mm_e.pageX - initial_click_position.x);
+                moved_amount.y = (mm_e.pageY - initial_click_position.y);
 
                 TG.onMove();
             });
@@ -284,23 +284,20 @@
 
 
     TG.onTouchStart = function (ts_e) {
-//        ts_e.preventDefault();
-        asd = ts_e.originalEvent.changedTouches[0].pageX;
-        asd2 = ts_e.originalEvent.changedTouches[0].pageY;
+        // I'm saving this here because I was getting some funky behaviour when dragging on a mobile device. Basically
+        // while on the move action, both ts_e and tm_e would be updated with the current position, thus no movement
+        // was seen.
+        initial_click_position.x = ts_e.originalEvent.changedTouches[0].pageX;
+        initial_click_position.y = ts_e.originalEvent.changedTouches[0].pageY;
         TG.onDown(ts_e, function () {
             // Bind a mousemove event onto our gameboard to get access to the mouse coordinates inside it
             $(gb_selector).bind('touchmove.move_tile', function (tm_e) {
 
                 tm_e.preventDefault();
 
-//                console.log(tm_e.originalEvent.changedTouches[0].pageX);
-//                console.log(tm_e.originalEvent.changedTouches[0].pageY);
-
                 // Calculate the movement of the tiles
-                moved_on_x = (tm_e.originalEvent.changedTouches[0].pageX - asd);
-                moved_on_y = (tm_e.originalEvent.changedTouches[0].pageY - asd2);
-
-                console.log("moved_on_x -> "+moved_on_x+", moved_on_y ->"+moved_on_y);
+                moved_amount.x = (tm_e.originalEvent.changedTouches[0].pageX - initial_click_position.x);
+                moved_amount.y = (tm_e.originalEvent.changedTouches[0].pageY - initial_click_position.y);
 
                 TG.onMove();
             });
