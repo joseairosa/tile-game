@@ -122,9 +122,7 @@ body {
 
 
 @media only screen and (min-width: 35em) {
-    #wrapper {
-        margin: 0;
-    }
+
 }
 
 .ir { display: block; border: 0; text-indent: -999em; overflow: hidden; background-color: transparent; background-repeat: no-repeat; text-align: left; direction: ltr; *line-height: 0; }

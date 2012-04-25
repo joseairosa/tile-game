@@ -128,7 +128,7 @@
             $(gb_selector).append(new_tile);
             // Make sure we don't fill the last tile as it will be our freespace
             if (index != (tm_size.x * tm_size.y) - 1) {
-                var background_position = (x == 0 && y == 0 ? "0px 0px" : "-" + (tile_size.h * y) + "px -" + (tile_size.w * x) + "px");
+                var background_position = (x == 0 && y == 0 ? "0px 0px" : "-" + (tile_size.w * x) + "px -" + (tile_size.h * y) + "px");
                 new_tile.css({
                     backgroundPosition:background_position,
                     left:(x * tile_size.w) + "px",
