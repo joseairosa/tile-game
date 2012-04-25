@@ -24,8 +24,10 @@
     var is_being_dragged = false;
     // Gameboard css selector (noramlly its ID)
     var gb_selector = "";
-
+    // Global container for the current move instructions
     var move_instructions = {};
+    // Plays counter
+    var plays_counter = 0;
 
     /**
      * Initialize our environment and position the tiles in a random position (shuffle)
@@ -197,6 +199,7 @@
             })
             .mouseup(function (mu_e) {
                 if (move_instructions != false) {
+                    var valid_move = false;
                     TG.executeMove(function (index, instruction) {
                         if ((instruction.a == "x" && Math.abs(moved_on_x) < (tile_size.w / 2) && Math.abs(moved_on_x) > 0) || (instruction.a == "y" && Math.abs(moved_on_y) < (tile_size.h / 2) && Math.abs(moved_on_y) > 0)) {
                             // Get tile inital position
@@ -207,6 +210,7 @@
                                 left:initial_position.x
                             }, 100);
                         } else {
+                            valid_move = true;
                             // Get the position to where this tile needs to move to
                             var move_to = TG.getPositionReference(instruction.to_i);
                             // Animate the tile to its new position
@@ -220,6 +224,8 @@
                             tm[instruction.i] = tmp;
                         }
                     });
+                    // Only if we have a valid move we should update the play counter
+                    if(valid_move) TG.addToPlayCount();
                     // Unbind the mousemove event as we don't need it anymore. It's always a good idea to clean the house
                     // after the party!
                     $(gb_selector).unbind('mousemove.move_tile');
@@ -231,6 +237,18 @@
         // Show our board again
         $(gb_selector).css("display", "block");
     };
+
+    /**
+     * Adds a play count and outputs it onto the game counter container element
+     */
+    TG.addToPlayCount = function () {
+        var o = $("#gameCounter");
+        // If we actually have a game counter specified.
+        if (o.length > 0) {
+            plays_counter++;
+            o.html(plays_counter + (plays_counter == 1 ? " play" : " plays"));
+        }
+    }
 
     /**
      * Check if we have completed our game by aligning our tile matrix.
