@@ -279,22 +279,25 @@
         });
     };
 
+    var asd = 0;
+    var asd2 = 0;
+
     TG.onTouchStart = function (ts_e) {
 //        ts_e.preventDefault();
-        console.log(ts_e.originalEvent.changedTouches[0].pageX);
-        console.log(ts_e.originalEvent.changedTouches[0].pageY);
+        asd = console.log(ts_e.originalEvent.changedTouches[0].pageX);
+        asd2 = console.log(ts_e.originalEvent.changedTouches[0].pageY);
         TG.onDown(ts_e, function () {
             // Bind a mousemove event onto our gameboard to get access to the mouse coordinates inside it
             $(gb_selector).bind('touchmove.move_tile', function (tm_e) {
 
                 tm_e.preventDefault();
 
-                console.log(tm_e.originalEvent.changedTouches[0].pageX);
-                console.log(tm_e.originalEvent.changedTouches[0].pageY);
+//                console.log(tm_e.originalEvent.changedTouches[0].pageX);
+//                console.log(tm_e.originalEvent.changedTouches[0].pageY);
 
                 // Calculate the movement of the tiles
-                moved_on_x = (tm_e.originalEvent.changedTouches[0].pageX - ts_e.originalEvent.changedTouches[0].pageX);
-                moved_on_y = (tm_e.originalEvent.changedTouches[0].pageY - ts_e.originalEvent.changedTouches[0].pageY);
+                moved_on_x = (tm_e.originalEvent.changedTouches[0].pageX - asd);
+                moved_on_y = (tm_e.originalEvent.changedTouches[0].pageY - asd2);
 
                 console.log("moved_on_x -> "+moved_on_x+", moved_on_y ->"+moved_on_y);
 
