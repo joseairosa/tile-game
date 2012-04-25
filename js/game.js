@@ -285,8 +285,8 @@
 
     TG.onTouchStart = function (ts_e) {
 //        ts_e.preventDefault();
-        asd = console.log(ts_e.originalEvent.changedTouches[0].pageX);
-        asd2 = console.log(ts_e.originalEvent.changedTouches[0].pageY);
+        asd = ts_e.originalEvent.changedTouches[0].pageX;
+        asd2 = ts_e.originalEvent.changedTouches[0].pageY;
         TG.onDown(ts_e, function () {
             // Bind a mousemove event onto our gameboard to get access to the mouse coordinates inside it
             $(gb_selector).bind('touchmove.move_tile', function (tm_e) {
