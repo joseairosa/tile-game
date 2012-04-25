@@ -96,6 +96,10 @@ body {
     font-size: 2em;
 }
 
+#gameOverInfo {
+    font-size: 1.3em;
+}
+
 .tiles {
     background: transparent url(../assets/img/tile_bg.jpg);
     position: absolute;

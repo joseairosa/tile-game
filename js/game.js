@@ -277,13 +277,14 @@
         )
             .append(
             $("<div></div>")
+                .attr('id','gameOverInfo')
                 .css({
                     position:"absolute",
                     top:"180px",
                     left:"60px",
                     zIndex:4
                 })
-                .html('<div style="float:left;"><img src="assets/img/f_logo.png" width="140" height="140" title="Facebook" alt="Game Over - Congratulations"/></div><div style="float:right;margin-left:30px;"><h1>Congratulations!</h1><br/>You just finished the game!</div>')
+                .html('<div style="float:left;"><img src="assets/img/f_logo.png" width="140" height="140" title="Facebook" alt="Game Over - Congratulations"/></div><div style="float:right;margin-left:30px;"><h1>Congratulations!</h1><br/>You just finished the game!<br/>Here, have a digital cookie :)</div>')
         );
         return true;
     };
