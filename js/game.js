@@ -287,7 +287,10 @@
 
                 tm_e.preventDefault();
 
-                console.log(tm_e.originalEvent);
+                console.log(tm_e.originalEvent.changedTouches[0].pageX);
+                console.log(tm_e.originalEvent.changedTouches[0].pageY);
+                console.log(ts_e.originalEvent.changedTouches[0].pageX);
+                console.log(ts_e.originalEvent.changedTouches[0].pageY);
 
                 // Calculate the movement of the tiles
                 moved_on_x = (tm_e.originalEvent.changedTouches[0].pageX - ts_e.originalEvent.changedTouches[0].pageX);
