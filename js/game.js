@@ -34,6 +34,9 @@
     var moved_on_x = 0;
     var moved_on_y = 0;
 
+    var asd = 0;
+    var asd2 = 0;
+
     /**
      * Initialize our environment and position the tiles in a random position (shuffle)
      *
@@ -279,8 +282,6 @@
         });
     };
 
-    var asd = 0;
-    var asd2 = 0;
 
     TG.onTouchStart = function (ts_e) {
 //        ts_e.preventDefault();
