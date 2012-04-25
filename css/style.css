@@ -69,6 +69,11 @@ td { vertical-align: top; }
 
 #gameboard {
     position: relative;
+    background-color: #EFF2F7;
+    border: 5px solid #D8DFEA;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
 }
 .tiles {
     background: transparent url(../assets/img/tile_bg.jpg);
@@ -81,6 +86,10 @@ td { vertical-align: top; }
 .no-tile {
     position: absolute;
     z-index: 1;
+}
+
+#gameRules {
+    font-size: 0.9em;
 }
 
 

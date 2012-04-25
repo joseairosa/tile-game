@@ -81,7 +81,7 @@ $app_name = idx($app_info, 'name', '');
 <html xmlns:fb="http://ogp.me/ns/fb#" lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
 
     <title><?php echo he($app_name); ?></title>
     <link rel="stylesheet" href="stylesheets/screen.css" media="Screen" type="text/css" />
@@ -214,7 +214,16 @@ $app_name = idx($app_info, 'name', '');
 
         <div role="main" id="gameboard"></div>
 
-        <footer></footer>
+        <footer>
+            <section id="gameRules">
+                <ol>
+                    <li>Click or drag a tile to move it to the blank space</li>
+                    <li>You can only move the tiles on the same line or column as the blank space</li>
+                    <li>Adjust the tiles to form the image on the background</li>
+                    <li>Once the image is complete you will win the game!</li>
+                </ol>
+            </section>
+        </footer>
 
 
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>

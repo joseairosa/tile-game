@@ -1,4 +1,4 @@
-// Created by: José P. Airosa for facebook code test #1
+// Created by: José P. Airosa for facebook puzzle code test #1
 // Email: me@joseairosa.com
 
 // Our abstracted scope
@@ -27,8 +27,12 @@
 
     var move_instructions = {};
 
+    /**
+     * Initialize our environment and position the tiles in a random position (shuffle)
+     *
+     * @param   string  element id where our game board should be generated
+     */
     TG.init = function (e) {
-
         gb_selector = "#" + e;
 
         // Calculate the width and height based on the image width and height and number of tiles on the x and y axis
@@ -40,8 +44,18 @@
         TG.shuffleTiles();
     };
 
+    /**
+     * Iterate through all the tiles in the board and runs a user provided callback
+     *
+     * @param   fn  user provided callback.
+     *              to this callback 3 arguments are provided:
+     *                  index - the index of the tile position on the game board
+     *                  jj - x axis position
+     *                  ii - y axis position
+     */
     TG.iterate = function (fn) {
         var index = 0;
+        // We change the axis here because I want to go over the x axis first and then iterate the y axis
         for (var ii = 0; ii < tm_size.y; ii++) {
             for (var jj = 0; jj < tm_size.x; jj++) {
                 fn(index, jj, ii);
@@ -50,6 +64,10 @@
         }
     };
 
+    /**
+     * Fills the tile matrix with default values. Should be only used on TG.init()
+     *
+     */
     TG.fillMatrix = function () {
         TG.iterate(function (index, x, y) {
             tm_position_cache.push({x:(x * tile_size.w), y:(y * tile_size.h)});
@@ -57,7 +75,12 @@
         });
     };
 
-    // Used the Fisher-Yates randomizing shuffle algorithm
+    /**
+     * Shuffles the tile matrix.
+     * Used the Fisher-Yates randomizing shuffle algorithm.
+     *
+     * @return  bool False if the tile matrix is empty.
+     */
     TG.shuffleTiles = function () {
         var i = tm.length;
         if (i == 0) return false;
@@ -77,12 +100,16 @@
                 top:axis.y
             });
         }
+        return true;
     };
 
+    /**
+     * Renders the board onto the element specified on the init method
+     */
     TG.renderBoard = function () {
 
         // Hide our board while we add the tiles and apply the pre-processed shuffle
-        $(gb_selector).css("display", "none").width(image_size.w).height(image_size.y);
+        $(gb_selector).css("display", "none").width(image_size.w).height(image_size.h);
 
         // Render
         TG.iterate(function (index, x, y) {
@@ -143,13 +170,13 @@
                             // is able to, normally, more than one gap
                             if (instruction.a == "x" && instruction.d < 0 && p.x > initial_position.x) p.x = initial_position.x;
                             else if (instruction.a == "x" && instruction.d > 0 && p.x < initial_position.x) p.x = initial_position.x;
-                            else if (instruction.a == "x" && instruction.d < 0 && Math.abs(moved_on_x) > tile_size.w) p.x = initial_position.x-tile_size.w;
-                            else if (instruction.a == "x" && instruction.d > 0 && Math.abs(moved_on_x) > tile_size.w) p.x = initial_position.x+tile_size.w;
+                            else if (instruction.a == "x" && instruction.d < 0 && Math.abs(moved_on_x) > tile_size.w) p.x = initial_position.x - tile_size.w;
+                            else if (instruction.a == "x" && instruction.d > 0 && Math.abs(moved_on_x) > tile_size.w) p.x = initial_position.x + tile_size.w;
 
                             if (instruction.a == "y" && instruction.d < 0 && p.y > initial_position.y) p.y = initial_position.y;
                             else if (instruction.a == "y" && instruction.d > 0 && p.y < initial_position.y) p.y = initial_position.y;
-                            else if (instruction.a == "y" && instruction.d < 0 && Math.abs(moved_on_y) > tile_size.h) p.y = initial_position.y-tile_size.h;
-                            else if (instruction.a == "y" && instruction.d > 0 && Math.abs(moved_on_y) > tile_size.h) p.y = initial_position.y+tile_size.h;
+                            else if (instruction.a == "y" && instruction.d < 0 && Math.abs(moved_on_y) > tile_size.h) p.y = initial_position.y - tile_size.h;
+                            else if (instruction.a == "y" && instruction.d > 0 && Math.abs(moved_on_y) > tile_size.h) p.y = initial_position.y + tile_size.h;
 
 
                             // Make sure the user is not able to move the tile outside gameboard limits
@@ -171,7 +198,7 @@
             .mouseup(function (mu_e) {
                 if (move_instructions != false) {
                     TG.executeMove(function (index, instruction) {
-                        if((instruction.a == "x" && Math.abs(moved_on_x) < (tile_size.w/2) && Math.abs(moved_on_x) > 0) || (instruction.a == "y" && Math.abs(moved_on_y) < (tile_size.h/2) && Math.abs(moved_on_y) > 0)) {
+                        if ((instruction.a == "x" && Math.abs(moved_on_x) < (tile_size.w / 2) && Math.abs(moved_on_x) > 0) || (instruction.a == "y" && Math.abs(moved_on_y) < (tile_size.h / 2) && Math.abs(moved_on_y) > 0)) {
                             // Get tile inital position
                             var initial_position = TG.getPositionReference(instruction.i);
                             // Animate the tile to its initial position
@@ -196,6 +223,7 @@
                     // Unbind the mousemove event as we don't need it anymore. It's always a good idea to clean the house
                     // after the party!
                     $(gb_selector).unbind('mousemove.move_tile');
+                    TG.checkGameOver();
                 }
                 is_being_dragged = false;
             });
@@ -204,32 +232,106 @@
         $(gb_selector).css("display", "block");
     };
 
-    // For a given index get the tile position
-    //
-    // @param index
-    //
-    // @return
+    /**
+     * Check if we have completed our game by aligning our tile matrix.
+     * In order for us to know that the game is over the tile matrix should be filled with indexes in a sequecial order
+     *
+     * @return  bool    True if the game is over and false if not
+     */
+    TG.checkGameOver = function () {
+        var index = 0;
+        for (var key in tm) {
+            if (index != tm[key]) {
+                return false;
+            }
+            index++;
+        }
+        $(gb_selector)
+            .append(
+            $("<div></div>").css({
+                position:"absolute",
+                backgroundColor:"#fff",
+                opacity:.8,
+                zIndex:3
+            })
+                .width(image_size.w)
+                .height(image_size.h)
+        )
+            .append(
+            $("<div></div>")
+                .css({
+                    position:"absolute",
+                    top:"180px",
+                    left:"60px",
+                    zIndex:4
+                })
+                .html('<div style="float:left;"><img src="assets/img/f_logo.png" width="140" height="140" title="Facebook" alt="Game Over - Congratulations"/></div><div style="float:right;margin-left:30px;"><h1>Congratulations!</h1><br/>You just finished the game!</div>')
+        );
+        return true;
+    };
+
+    /**
+     * For a given index get the tile position
+     *
+     * @param   int The index for which position we want to get the coordinates
+     * @return  object  with the x and y coordinates
+     */
     TG.getPositionReference = function (index) {
         return tm_position_cache[index];
     };
 
-    // Return the index of the tile from its current axis
+    /**
+     * Return the index of the tile from its current axis
+     *
+     * @param   int the x axis position
+     * @param   int the y axis position
+     * @return  int the index
+     */
     TG.getIndexReferenceByAxis = function (x, y) {
         return y * tm_size.x + x;
     };
 
+    /**
+     * Get the position of the white space
+     *
+     * @return object  with the x and y coordinates
+     */
     TG.getBlankSpot = function () {
         return TG.getPositionReference(tm.indexOf(tm.length - 1));
     };
 
+    /**
+     * For a given x axis tile position get the corresponding index
+     *
+     * @example 135px -> index 1
+     *
+     * @param   int x axis position
+     * @return  int index
+     */
     TG.getTileReferenceFromX = function (axis) {
         return (parseInt(axis) / parseInt(tile_size.w));
     };
 
-    TG.get_tile_reference_from_y = function (axis) {
+    /**
+     * For a given y axis tile position get the corresponding index
+     *
+     * @example 135px -> index 1
+     *
+     * @param   int y axis position
+     * @return  int index
+     */
+    TG.getTileReferenceFromY = function (axis) {
         return (parseInt(axis) / parseInt(tile_size.h));
     };
 
+    /**
+     * Make a tile move based on the move instructions previously set
+     *
+     * @param   method  the callback to execute on every tile that needs to move
+     *                  2 parameters will be provided to the callback:
+     *                      key - the index of instruction object array
+     *                      move_instructions - the instructions for a specific tile
+     */
     TG.executeMove = function (fn) {
         if (move_instructions != false) {
             for (var key in move_instructions) {
@@ -238,6 +340,13 @@
         }
     };
 
+    /**
+     * From a given interacted index calculate all the movements
+     *
+     * @param   int             the index that was interacted for movement
+     * @return  array|bool      if false this is an illigal move
+     *                          if array we have a move instructions object array
+     */
     TG.getMoveInstructions = function (i) {
 
         var index = tm.indexOf(parseInt(i));
@@ -256,10 +365,10 @@
         move_to_right = !!(clicked_ref.x - blank_ref.x < 0);
         move_to_bottom = !!(clicked_ref.y - blank_ref.y < 0);
 
-        var clicked_ref_x = TG.get_tile_reference_from_y(clicked_ref.x);
-        var clicked_ref_y = TG.get_tile_reference_from_y(clicked_ref.y);
-        var blank_ref_x = TG.get_tile_reference_from_y(blank_ref.x);
-        var blank_ref_y = TG.get_tile_reference_from_y(blank_ref.y);
+        var clicked_ref_x = TG.getTileReferenceFromY(clicked_ref.x);
+        var clicked_ref_y = TG.getTileReferenceFromY(clicked_ref.y);
+        var blank_ref_x = TG.getTileReferenceFromY(blank_ref.x);
+        var blank_ref_y = TG.getTileReferenceFromY(blank_ref.y);
 
         // Check if this is a x axis move
         tmp_array_move = [];
