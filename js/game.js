@@ -283,13 +283,15 @@
         ts_e.preventDefault();
         TG.onDown(ts_e, function (ts_e) {
             // Bind a mousemove event onto our gameboard to get access to the mouse coordinates inside it
-            $(gb_selector).bind('touchmove', function (tm_e) {
+            $(gb_selector).bind('touchmove.move_tile', function (tm_e) {
 
                 tm_e.preventDefault();
 
                 // Calculate the movement of the tiles
                 moved_on_x = (tm_e.originalEvent.changedTouches[0].pageX - ts_e.originalEvent.changedTouches[0].pageX);
                 moved_on_y = (tm_e.originalEvent.changedTouches[0].pageY - ts_e.originalEvent.changedTouches[0].pageY);
+
+                console.log("moved_on_x -> "+moved_on_x+", moved_on_y ->"+moved_on_y);
 
                 TG.onMove();
             });
@@ -301,7 +303,7 @@
         TG.onUp(te_e, function () {
             // Unbind the touchmove event as we don't need it anymore. It's always a good idea to clean the house
             // after the iOS party!
-            $(gb_selector).unbind('touchmove');
+            $(gb_selector).unbind('touchmove.move_tile');
         });
     };
 
