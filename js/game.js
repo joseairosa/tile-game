@@ -169,7 +169,7 @@
                             };
 
                             // Make sure the user is not able to move the tile in the wrong direction and more than he
-                            // is able to, normally, more than one gap
+                            // is able to (more than one gap)
                             if (instruction.a == "x" && instruction.d < 0 && p.x > initial_position.x) p.x = initial_position.x;
                             else if (instruction.a == "x" && instruction.d > 0 && p.x < initial_position.x) p.x = initial_position.x;
                             else if (instruction.a == "x" && instruction.d < 0 && Math.abs(moved_on_x) > tile_size.w) p.x = initial_position.x - tile_size.w;
@@ -198,9 +198,17 @@
                 }
             })
             .mouseup(function (mu_e) {
+                // We know that if the move_instructions is false we have a invalid play
                 if (move_instructions != false) {
+                    // This is just a container that based on the following move processing will let us know afterwards
+                    // if we had a valid move or not.
                     var valid_move = false;
                     TG.executeMove(function (index, instruction) {
+                        // This is where we check if firstly we have a drag movement and if the drag movement is moved
+                        // the tile less than half of its way to the new position. If this is the case we need to
+                        // rollback (all the tiles affected) to the initial position.
+                        // If we passed more than halfway we can safely move the affected tiles to the new position
+                        // and update the tile matrix with the movement.
                         if ((instruction.a == "x" && Math.abs(moved_on_x) < (tile_size.w / 2) && Math.abs(moved_on_x) > 0) || (instruction.a == "y" && Math.abs(moved_on_y) < (tile_size.h / 2) && Math.abs(moved_on_y) > 0)) {
                             // Get tile inital position
                             var initial_position = TG.getPositionReference(instruction.i);
