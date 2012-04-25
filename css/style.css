@@ -78,7 +78,8 @@ body {
 }
 
 #wrapper {
-    width: 540px;
+    width: 550px;
+    max-width: 550px;
     margin: 0 auto;
 }
 
