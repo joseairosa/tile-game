@@ -280,12 +280,14 @@
     };
 
     TG.onTouchStart = function (ts_e) {
-        ts_e.preventDefault();
+//        ts_e.preventDefault();
         TG.onDown(ts_e, function (ts_e) {
             // Bind a mousemove event onto our gameboard to get access to the mouse coordinates inside it
             $(gb_selector).bind('touchmove.move_tile', function (tm_e) {
 
                 tm_e.preventDefault();
+
+                console.log(tm_e.originalEvent);
 
                 // Calculate the movement of the tiles
                 moved_on_x = (tm_e.originalEvent.changedTouches[0].pageX - ts_e.originalEvent.changedTouches[0].pageX);
@@ -299,7 +301,7 @@
     };
 
     TG.onTouchEnd = function (te_e) {
-        te_e.preventDefault();
+//        te_e.preventDefault();
         TG.onUp(te_e, function () {
             // Unbind the touchmove event as we don't need it anymore. It's always a good idea to clean the house
             // after the iOS party!
