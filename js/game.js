@@ -28,6 +28,11 @@
     var move_instructions = {};
     // Plays counter
     var plays_counter = 0;
+    // Container for the clicked element
+    var clicked_element = {};
+
+    var moved_on_x = 0;
+    var moved_on_y = 0;
 
     /**
      * Initialize our environment and position the tiles in a random position (shuffle)
@@ -137,113 +142,167 @@
             }
         });
 
-        var moved_on_x = 0;
-        var moved_on_y = 0;
-
         // Add callbacks to each of the tiles
         $(".tiles")
             .mousedown(function (md_e) {
-
-                moved_on_x = 0;
-                moved_on_y = 0;
-
-                is_being_dragged = true;
-
-                move_instructions = TG.getMoveInstructions($(this).attr("tile"));
-
-                if (move_instructions != false) {
-                    // Bind a mousemove event onto our gameboard to get access to the mouse coordinates inside it
-                    $(gb_selector).bind('mousemove.move_tile', function (mm_e) {
-
-                        TG.executeMove(function (index, instruction) {
-                            // Get the position to where this tile needs to move to
-                            var initial_position = TG.getPositionReference(instruction.i);
-
-                            // Calculate the movement of the tiles
-                            moved_on_x = (mm_e.pageX - md_e.pageX);
-                            moved_on_y = (mm_e.pageY - md_e.pageY);
-
-                            var p = {
-                                x:instruction.a == "y" ? initial_position.x : initial_position.x + (moved_on_x),
-                                y:instruction.a == "x" ? initial_position.y : initial_position.y + (moved_on_y)
-                            };
-
-                            // Make sure the user is not able to move the tile in the wrong direction and more than he
-                            // is able to (more than one gap)
-                            if (instruction.a == "x" && instruction.d < 0 && p.x > initial_position.x) p.x = initial_position.x;
-                            else if (instruction.a == "x" && instruction.d > 0 && p.x < initial_position.x) p.x = initial_position.x;
-                            else if (instruction.a == "x" && instruction.d < 0 && Math.abs(moved_on_x) > tile_size.w) p.x = initial_position.x - tile_size.w;
-                            else if (instruction.a == "x" && instruction.d > 0 && Math.abs(moved_on_x) > tile_size.w) p.x = initial_position.x + tile_size.w;
-
-                            if (instruction.a == "y" && instruction.d < 0 && p.y > initial_position.y) p.y = initial_position.y;
-                            else if (instruction.a == "y" && instruction.d > 0 && p.y < initial_position.y) p.y = initial_position.y;
-                            else if (instruction.a == "y" && instruction.d < 0 && Math.abs(moved_on_y) > tile_size.h) p.y = initial_position.y - tile_size.h;
-                            else if (instruction.a == "y" && instruction.d > 0 && Math.abs(moved_on_y) > tile_size.h) p.y = initial_position.y + tile_size.h;
-
-
-                            // Make sure the user is not able to move the tile outside gameboard limits
-                            if (p.x >= image_size.w - tile_size.w) p.x = image_size.w - tile_size.w;
-                            if (p.y >= image_size.h - tile_size.h) p.y = image_size.h - tile_size.h;
-                            if (p.x <= 0) p.x = 0;
-                            if (p.y <= 0) p.y = 0;
-
-                            // Animate the tile to its new position
-                            $('div[tile="' + tm[instruction.i] + '"]').css({
-                                top:p.y,
-                                left:p.x
-                            });
-                        });
-
-                    });
-                }
+                clicked_element = $(this);
+                TG.onMouseDown(md_e);
             })
             .mouseup(function (mu_e) {
-                // We know that if the move_instructions is false we have a invalid play
-                if (move_instructions != false) {
-                    // This is just a container that based on the following move processing will let us know afterwards
-                    // if we had a valid move or not.
-                    var valid_move = false;
-                    TG.executeMove(function (index, instruction) {
-                        // This is where we check if firstly we have a drag movement and if the drag movement is moved
-                        // the tile less than half of its way to the new position. If this is the case we need to
-                        // rollback (all the tiles affected) to the initial position.
-                        // If we passed more than halfway we can safely move the affected tiles to the new position
-                        // and update the tile matrix with the movement.
-                        if ((instruction.a == "x" && Math.abs(moved_on_x) < (tile_size.w / 2) && Math.abs(moved_on_x) > 0) || (instruction.a == "y" && Math.abs(moved_on_y) < (tile_size.h / 2) && Math.abs(moved_on_y) > 0)) {
-                            // Get tile inital position
-                            var initial_position = TG.getPositionReference(instruction.i);
-                            // Animate the tile to its initial position
-                            $('div[tile="' + tm[instruction.i] + '"]').animate({
-                                top:initial_position.y,
-                                left:initial_position.x
-                            }, 100);
-                        } else {
-                            valid_move = true;
-                            // Get the position to where this tile needs to move to
-                            var move_to = TG.getPositionReference(instruction.to_i);
-                            // Animate the tile to its new position
-                            $('div[tile="' + tm[instruction.i] + '"]').animate({
-                                top:move_to.y,
-                                left:move_to.x
-                            }, 100);
-                            // Swap indexes on the tile matrix
-                            var tmp = tm[instruction.to_i];
-                            tm[instruction.to_i] = tm[instruction.i];
-                            tm[instruction.i] = tmp;
-                        }
-                    });
-                    // Only if we have a valid move we should update the play counter
-                    if(valid_move) TG.addToPlayCount();
-                    // Unbind the mousemove event as we don't need it anymore. It's always a good idea to clean the house
-                    // after the party!
-                    $(gb_selector).unbind('mousemove.move_tile');
-                    TG.checkGameOver();
-                }
-                is_being_dragged = false;
+                TG.onMouseUp(mu_e);
+            })
+            .bind("touchstart", function (ts_e) {
+                clicked_element = $(this);
+                TG.onTouchStart(ts_e);
+            })
+            .bind("touchend touchcancel", function (te_e) {
+                TG.onTouchEnd(te_e);
             });
 
         // Show our board again
         $(gb_selector).css("display", "block");
+    };
+
+    TG.onDown = function (md_e, fn) {
+        moved_on_x = 0;
+        moved_on_y = 0;
+
+        is_being_dragged = true;
+
+        move_instructions = TG.getMoveInstructions(clicked_element.attr("tile"));
+
+        if (move_instructions != false) {
+            fn(md_e);
+        }
+    };
+
+    TG.onMove = function () {
+        TG.executeMove(function (index, instruction) {
+            // Get the position to where this tile needs to move to
+            var initial_position = TG.getPositionReference(instruction.i);
+
+            var p = {
+                x:instruction.a == "y" ? initial_position.x : initial_position.x + (moved_on_x),
+                y:instruction.a == "x" ? initial_position.y : initial_position.y + (moved_on_y)
+            };
+
+            // Make sure the user is not able to move the tile in the wrong direction and more than he
+            // is able to (more than one gap)
+            if (instruction.a == "x" && instruction.d < 0 && p.x > initial_position.x) p.x = initial_position.x;
+            else if (instruction.a == "x" && instruction.d > 0 && p.x < initial_position.x) p.x = initial_position.x;
+            else if (instruction.a == "x" && instruction.d < 0 && Math.abs(moved_on_x) > tile_size.w) p.x = initial_position.x - tile_size.w;
+            else if (instruction.a == "x" && instruction.d > 0 && Math.abs(moved_on_x) > tile_size.w) p.x = initial_position.x + tile_size.w;
+
+            if (instruction.a == "y" && instruction.d < 0 && p.y > initial_position.y) p.y = initial_position.y;
+            else if (instruction.a == "y" && instruction.d > 0 && p.y < initial_position.y) p.y = initial_position.y;
+            else if (instruction.a == "y" && instruction.d < 0 && Math.abs(moved_on_y) > tile_size.h) p.y = initial_position.y - tile_size.h;
+            else if (instruction.a == "y" && instruction.d > 0 && Math.abs(moved_on_y) > tile_size.h) p.y = initial_position.y + tile_size.h;
+
+
+            // Make sure the user is not able to move the tile outside gameboard limits
+            if (p.x >= image_size.w - tile_size.w) p.x = image_size.w - tile_size.w;
+            if (p.y >= image_size.h - tile_size.h) p.y = image_size.h - tile_size.h;
+            if (p.x <= 0) p.x = 0;
+            if (p.y <= 0) p.y = 0;
+
+            // Animate the tile to its new position
+            $('div[tile="' + tm[instruction.i] + '"]').css({
+                top:p.y,
+                left:p.x
+            });
+        });
+    };
+
+    TG.onUp = function (mu_e, fn) {
+        // We know that if the move_instructions is false we have a invalid play
+        if (move_instructions != false) {
+            // This is just a container that based on the following move processing will let us know afterwards
+            // if we had a valid move or not.
+            var valid_move = false;
+            TG.executeMove(function (index, instruction) {
+                // This is where we check if firstly we have a drag movement and if the drag movement is moved
+                // the tile less than half of its way to the new position. If this is the case we need to
+                // rollback (all the tiles affected) to the initial position.
+                // If we passed more than halfway we can safely move the affected tiles to the new position
+                // and update the tile matrix with the movement.
+                if ((instruction.a == "x" && Math.abs(moved_on_x) < (tile_size.w / 2) && Math.abs(moved_on_x) > 0) || (instruction.a == "y" && Math.abs(moved_on_y) < (tile_size.h / 2) && Math.abs(moved_on_y) > 0)) {
+                    // Get tile inital position
+                    var initial_position = TG.getPositionReference(instruction.i);
+                    // Animate the tile to its initial position
+                    $('div[tile="' + tm[instruction.i] + '"]').animate({
+                        top:initial_position.y,
+                        left:initial_position.x
+                    }, 100);
+                } else {
+                    valid_move = true;
+                    // Get the position to where this tile needs to move to
+                    var move_to = TG.getPositionReference(instruction.to_i);
+                    // Animate the tile to its new position
+                    $('div[tile="' + tm[instruction.i] + '"]').animate({
+                        top:move_to.y,
+                        left:move_to.x
+                    }, 100);
+                    // Swap indexes on the tile matrix
+                    var tmp = tm[instruction.to_i];
+                    tm[instruction.to_i] = tm[instruction.i];
+                    tm[instruction.i] = tmp;
+                }
+            });
+            // Only if we have a valid move we should update the play counter
+            if (valid_move) TG.addToPlayCount();
+            // Cleanup callback
+            fn();
+            TG.checkGameOver();
+        }
+        is_being_dragged = false;
+    };
+
+    TG.onMouseDown = function (md_e) {
+        TG.onDown(md_e, function () {
+            // Bind a mousemove event onto our gameboard to get access to the mouse coordinates inside it
+            $(gb_selector).bind('mousemove.move_tile', function (mm_e) {
+
+                // Calculate the movement of the tiles
+                moved_on_x = (mm_e.pageX - md_e.pageX);
+                moved_on_y = (mm_e.pageY - md_e.pageY);
+
+                TG.onMove();
+            });
+        });
+    };
+
+    TG.onMouseUp = function (mu_e) {
+        TG.onUp(mu_e, function () {
+            // Unbind the mousemove event as we don't need it anymore. It's always a good idea to clean the house
+            // after the party!
+            $(gb_selector).unbind('mousemove.move_tile');
+        });
+    };
+
+    TG.onTouchStart = function (ts_e) {
+        ts_e.preventDefault();
+        TG.onDown(md_e, function (ts_e) {
+            // Bind a mousemove event onto our gameboard to get access to the mouse coordinates inside it
+            $(gb_selector).bind('touchmove.move_tile', function (tm_e) {
+
+                tm_e.preventDefault();
+
+                // Calculate the movement of the tiles
+                moved_on_x = (tm_e.originalEvent.changedTouches[0].pageX - ts_e.originalEvent.changedTouches[0].pageX);
+                moved_on_y = (tm_e.originalEvent.changedTouches[0].pageY - ts_e.originalEvent.changedTouches[0].pageY);
+
+                TG.onMove();
+            });
+        });
+    };
+
+    TG.onTouchEnd = function (te_e) {
+        te_e.preventDefault();
+        TG.onUp(te_e, function () {
+            // Unbind the touchmove event as we don't need it anymore. It's always a good idea to clean the house
+            // after the iOS party!
+            $(gb_selector).unbind('touchmove.move_tile');
+        });
     };
 
     /**
@@ -285,7 +344,7 @@
         )
             .append(
             $("<div></div>")
-                .attr('id','gameOverInfo')
+                .attr('id', 'gameOverInfo')
                 .css({
                     position:"absolute",
                     top:"180px",
@@ -461,6 +520,7 @@
             return false
         }
 
+        // We reverse the array in order to have them in the correct order of movement.
         return tmp_array_move.reverse();
     };
 
