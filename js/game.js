@@ -164,6 +164,12 @@
         $(gb_selector).css("display", "block");
     };
 
+    /**
+     * Generic method that applies the on down action when a tile is clicked
+     *
+     * @param   md_e    mouse down event object
+     * @param   fn      callback function to be called after making sure the play is valid
+     */
     TG.onDown = function (md_e, fn) {
         moved_amount.x = 0;
         moved_amount.y = 0;
@@ -177,6 +183,9 @@
         }
     };
 
+    /**
+     * Generic method that applies the on move action when a tile is being moved (normally dragged)
+     */
     TG.onMove = function () {
         TG.executeMove(function (index, instruction) {
             // Get the position to where this tile needs to move to
@@ -214,6 +223,13 @@
         });
     };
 
+    /**
+     * Generic method that applies the on up action when a tile is released
+     *
+     * @param   object      mouse up event object
+     * @param   method      callback to be called after performing the finishing calculations and before determining if
+     *                      the game is over
+     */
     TG.onUp = function (mu_e, fn) {
         // We know that if the move_instructions is false we have a invalid play
         if (move_instructions != false) {
@@ -258,6 +274,11 @@
         is_being_dragged = false;
     };
 
+    /**
+     * Handle the mouse down event
+     *
+     * @param   object  mouse down event object
+     */
     TG.onMouseDown = function (md_e) {
         initial_click_position.x = md_e.pageX;
         initial_click_position.y = md_e.pageY;
@@ -274,6 +295,11 @@
         });
     };
 
+    /**
+     * Handle mouse up event
+     *
+     * @param   object  mouse up event object
+     */
     TG.onMouseUp = function (mu_e) {
         TG.onUp(mu_e, function () {
             // Unbind the mousemove event as we don't need it anymore. It's always a good idea to clean the house
@@ -282,7 +308,12 @@
         });
     };
 
-
+    /**
+     * Handle touch start event
+     *
+     * @param   object  touch start event object. Note that this is a jQuery event object and as such, it is needed to
+     *                  access the original event
+     */
     TG.onTouchStart = function (ts_e) {
         // I'm saving this here because I was getting some funky behaviour when dragging on a mobile device. Basically
         // while on the move action, both ts_e and tm_e would be updated with the current position, thus no movement
@@ -304,6 +335,12 @@
         });
     };
 
+    /**
+     * Handle touch end event
+     *
+     * @param   object  touch end event object. Note that this is a jQuery event object and as such, it is needed to
+     *                  access the original event
+     */
     TG.onTouchEnd = function (te_e) {
 //        te_e.preventDefault();
         TG.onUp(te_e, function () {
