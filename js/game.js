@@ -31,9 +31,9 @@
     // Container for the clicked element
     var clicked_element = {};
     // Container for the updated movement amount during a drag action (relative to the game board)
-    var moved_amount = {x:0,y:0};
+    var moved_amount = {x:0, y:0};
     // Container for the initial position when we click on a tile (relative to the game board)
-    var initial_click_position = {x:0,y:0};
+    var initial_click_position = {x:0, y:0};
 
     /**
      * Initialize our environment and position the tiles in a random position (shuffle)
@@ -47,9 +47,40 @@
         tile_size.w = (image_size.w / tm_size.x);
         tile_size.h = (image_size.h / tm_size.y);
 
+        var viewportwidth;
+        var viewportheight;
+
+        // The more standards compliant browsers (mozilla/netscape/opera/IE7) use window.innerWidth and window.innerHeight
+        if (typeof window.innerWidth != 'undefined') {
+            viewportwidth = window.innerWidth;
+            viewportheight = window.innerHeight;
+        }
+        // IE6 in standards compliant mode (i.e. with a valid doctype as the first line in the document)
+        else if (typeof document.documentElement != 'undefined' && typeof document.documentElement.clientWidth != 'undefined' && document.documentElement.clientWidth != 0) {
+            viewportwidth = document.documentElement.clientWidth;
+            viewportheight = document.documentElement.clientHeight;
+        }
+        // Older versions of IE
+        else {
+            viewportwidth = document.getElementsByTagName('body')[0].clientWidth;
+            viewportheight = document.getElementsByTagName('body')[0].clientHeight;
+        }
+
         TG.fillMatrix();
         TG.renderBoard(e);
         TG.shuffleTiles();
+
+        // Calculate the gameboard width. Notice that we also take into account the size of the borders, in case
+        // we have any.
+        var gameboard_width = ($(gb_selector).width() + parseInt($(gb_selector).css("borderLeftWidth"), 10) + parseInt($(gb_selector).css("borderRightWidth"), 10));
+        // Only apply this if we know that the width of our browser viewport is smaller than the width of our gameboard.
+        // Otherwise we don't need to scale anything. We could tho...
+        if (viewportwidth < gameboard_width) {
+            // Detect the scale that we need to apply
+            var viewport_scale = viewportwidth / gameboard_width;
+            var viewport = document.querySelector("meta[name=viewport]");
+            viewport.setAttribute('content', 'width=device-width; initial-scale=' + viewport_scale + '; maximum-scale=' + viewport_scale + '; user-scalable=0;');
+        }
     };
 
     /**
