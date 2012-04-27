@@ -1,6 +1,16 @@
 // Created by: José P. Airosa for facebook puzzle code test #1
 // Email: me@joseairosa.com
 
+/**
+ * Few notes:
+ * - We could add more modularity to the app, but since we're using jQuery to store the elements we're already getting
+ * most of the extra modularity needed.
+ * - A few variables could be colapsed onto a single options object but I decided to be more verbose for better readability
+ * - There are a few "raw" algorithms that could be done using jQuery or any other framework but I decided to provide
+ * write them from scratch to show that any developer should know the basics of javascript :)
+ * - Enjoy!!
+ */
+
 // Our abstracted scope
 (function () {
 
