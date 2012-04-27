@@ -22,8 +22,8 @@
     var image_size = {w:540, h:540};
     // Drag flag
     var is_being_dragged = false;
-    // Gameboard css selector (noramlly its ID)
-    var gb_selector = "";
+    // Gameboard data container
+    var gb_data = {};
     // Global container for the current move instructions
     var move_instructions = {};
     // Plays counter
@@ -34,6 +34,12 @@
     var moved_amount = {x:0, y:0};
     // Container for the initial position when we click on a tile (relative to the game board)
     var initial_click_position = {x:0, y:0};
+    // Container for the current mouse position on a touchmove and mousemove event
+    var move_position = {x:0, y:0};
+    // Flag to know if we've gone out of bounds. This will remove some further calculations
+    var is_out_of_bounds = false;
+    // Flag to know if we're dealing with a touch based device or not
+    var is_touch_device = false;
 
     /**
      * Initialize our environment and position the tiles in a random position (shuffle)
@@ -41,11 +47,19 @@
      * @param   string  element id where our game board should be generated
      */
     TG.init = function (e) {
-        gb_selector = "#" + e;
+        // Save gameboard data for later use
+        gb_data.selector = "#" + e;
+        var tmp_pos = $(gb_data.selector).offset();
+        gb_data.position = {x:tmp_pos.left,y:tmp_pos.top};
 
         // Calculate the width and height based on the image width and height and number of tiles on the x and y axis
         tile_size.w = (image_size.w / tm_size.x);
         tile_size.h = (image_size.h / tm_size.y);
+
+        // Check if this is touch based
+        if ("ontouchstart" in document.documentElement) {
+            is_touch_device = true;
+        }
 
         var viewportwidth;
         var viewportheight;
@@ -72,7 +86,7 @@
 
         // Calculate the gameboard width. Notice that we also take into account the size of the borders, in case
         // we have any.
-        var gameboard_width = ($(gb_selector).width() + parseInt($(gb_selector).css("borderLeftWidth"), 10) + parseInt($(gb_selector).css("borderRightWidth"), 10));
+        var gameboard_width = ($(gb_data.selector).width() + parseInt($(gb_data.selector).css("borderLeftWidth"), 10) + parseInt($(gb_data.selector).css("borderRightWidth"), 10));
         // Only apply this if we know that the width of our browser viewport is smaller than the width of our gameboard.
         // Otherwise we don't need to scale anything. We could tho...
         if (viewportwidth < gameboard_width) {
@@ -148,7 +162,7 @@
     TG.renderBoard = function () {
 
         // Hide our board while we add the tiles and apply the pre-processed shuffle
-        $(gb_selector).css("display", "none").width(image_size.w).height(image_size.h);
+        $(gb_data.selector).css("display", "none").width(image_size.w).height(image_size.h);
 
         // Render
         TG.iterate(function (index, x, y) {
@@ -156,7 +170,7 @@
                 .attr({tile:index})
                 .width(tile_size.w)
                 .height(tile_size.h);
-            $(gb_selector).append(new_tile);
+            $(gb_data.selector).append(new_tile);
             // Make sure we don't fill the last tile as it will be our freespace
             if (index != (tm_size.x * tm_size.y) - 1) {
                 var background_position = (x == 0 && y == 0 ? "0px 0px" : "-" + (tile_size.w * x) + "px -" + (tile_size.h * y) + "px");
@@ -181,18 +195,18 @@
                 TG.onMouseDown(md_e);
             })
             .mouseup(function (mu_e) {
-                TG.onMouseUp(mu_e);
+                TG.onMouseUp($(this),mu_e);
             })
             .bind("touchstart", function (ts_e) {
                 clicked_element = $(this);
                 TG.onTouchStart(ts_e);
             })
             .bind("touchend touchcancel", function (te_e) {
-                TG.onTouchEnd(te_e);
+                TG.onTouchEnd($(this),te_e);
             });
 
         // Show our board again
-        $(gb_selector).css("display", "block");
+        $(gb_data.selector).css("display", "block");
     };
 
     /**
@@ -246,6 +260,18 @@
             if (p.x <= 0) p.x = 0;
             if (p.y <= 0) p.y = 0;
 
+            // Make sure that if the user runs his mouse or finger out of the gameboard boundaries we need to do something
+            // In this case we force a mouseup/touchend event
+            if(move_position.x < gb_data.position.x || move_position.x > (gb_data.position.x+image_size.w) || move_position.y < gb_data.position.y || move_position.y > (gb_data.position.y+image_size.h)) {
+                if(is_touch_device) {
+                    clicked_element.trigger("touchend");
+                } else {
+                    clicked_element.trigger("mouseup");
+                }
+                is_out_of_bounds = true;
+                return;
+            }
+
             // Animate the tile to its new position
             $('div[tile="' + tm[instruction.i] + '"]').css({
                 top:p.y,
@@ -273,7 +299,7 @@
                 // rollback (all the tiles affected) to the initial position.
                 // If we passed more than halfway we can safely move the affected tiles to the new position
                 // and update the tile matrix with the movement.
-                if ((instruction.a == "x" && Math.abs(moved_amount.x) < (tile_size.w / 2) && Math.abs(moved_amount.x) > 0) || (instruction.a == "y" && Math.abs(moved_amount.y) < (tile_size.h / 2) && Math.abs(moved_amount.y) > 0)) {
+                if (is_out_of_bounds || ((instruction.a == "x" && Math.abs(moved_amount.x) < (tile_size.w / 2) && Math.abs(moved_amount.x) > 0) || (instruction.a == "y" && Math.abs(moved_amount.y) < (tile_size.h / 2) && Math.abs(moved_amount.y) > 0))) {
                     // Get tile inital position
                     var initial_position = TG.getPositionReference(instruction.i);
                     // Animate the tile to its initial position
@@ -281,6 +307,7 @@
                         top:initial_position.y,
                         left:initial_position.x
                     }, 100);
+                    is_out_of_bounds = false;
                 } else {
                     valid_move = true;
                     // Get the position to where this tile needs to move to
@@ -315,11 +342,15 @@
         initial_click_position.y = md_e.pageY;
         TG.onDown(md_e, function () {
             // Bind a mousemove event onto our gameboard to get access to the mouse coordinates inside it
-            $(gb_selector).bind('mousemove.move_tile', function (mm_e) {
+            $(gb_data.selector).bind('mousemove.move_tile', function (mm_e) {
+
+                // Update current mouse/finger position
+                move_position.x = mm_e.pageX;
+                move_position.y = mm_e.pageY;
 
                 // Calculate the movement of the tiles
-                moved_amount.x = (mm_e.pageX - initial_click_position.x);
-                moved_amount.y = (mm_e.pageY - initial_click_position.y);
+                moved_amount.x = (move_position.x - initial_click_position.x);
+                moved_amount.y = (move_position.y - initial_click_position.y);
 
                 TG.onMove();
             });
@@ -331,11 +362,11 @@
      *
      * @param   object  mouse up event object
      */
-    TG.onMouseUp = function (mu_e) {
+    TG.onMouseUp = function (element,mu_e) {
         TG.onUp(mu_e, function () {
             // Unbind the mousemove event as we don't need it anymore. It's always a good idea to clean the house
             // after the party!
-            $(gb_selector).unbind('mousemove.move_tile');
+            $(gb_data.selector).unbind('mousemove.move_tile');
         });
     };
 
@@ -346,24 +377,30 @@
      *                  access the original event
      */
     TG.onTouchStart = function (ts_e) {
-        // I'm saving this here because I was getting some funky behaviour when dragging on a mobile device. Basically
-        // while on the move action, both ts_e and tm_e would be updated with the current position, thus no movement
-        // was seen.
-        initial_click_position.x = ts_e.originalEvent.changedTouches[0].pageX;
-        initial_click_position.y = ts_e.originalEvent.changedTouches[0].pageY;
-        TG.onDown(ts_e, function () {
-            // Bind a mousemove event onto our gameboard to get access to the mouse coordinates inside it
-            $(gb_selector).bind('touchmove.move_tile', function (tm_e) {
+        // Make sure we avoid multitouch on the tiles
+        if(!is_being_dragged) {
+            // I'm saving this here because I was getting some funky behaviour when dragging on a mobile device. Basically
+            // while on the move action, both ts_e and tm_e would be updated with the current position, thus no movement
+            // was seen.
+            initial_click_position.x = ts_e.originalEvent.changedTouches[0].pageX;
+            initial_click_position.y = ts_e.originalEvent.changedTouches[0].pageY;
+            TG.onDown(ts_e, function () {
+                // Bind a mousemove event onto our gameboard to get access to the mouse coordinates inside it
+                $(gb_data.selector).bind('touchmove.move_tile', function (tm_e) {
 
-                tm_e.preventDefault();
+                    tm_e.preventDefault();
 
-                // Calculate the movement of the tiles
-                moved_amount.x = (tm_e.originalEvent.changedTouches[0].pageX - initial_click_position.x);
-                moved_amount.y = (tm_e.originalEvent.changedTouches[0].pageY - initial_click_position.y);
+                    // Update current mouse/finger position
+                    move_position.x = tm_e.originalEvent.changedTouches[0].pageX;
+                    move_position.y = tm_e.originalEvent.changedTouches[0].pageY;
+                    // Calculate the movement of the tiles
+                    moved_amount.x = (move_position.x - initial_click_position.x);
+                    moved_amount.y = (move_position.y - initial_click_position.y);
 
-                TG.onMove();
+                    TG.onMove();
+                });
             });
-        });
+        }
     };
 
     /**
@@ -372,13 +409,15 @@
      * @param   object  touch end event object. Note that this is a jQuery event object and as such, it is needed to
      *                  access the original event
      */
-    TG.onTouchEnd = function (te_e) {
-//        te_e.preventDefault();
-        TG.onUp(te_e, function () {
-            // Unbind the touchmove event as we don't need it anymore. It's always a good idea to clean the house
-            // after the iOS party!
-            $(gb_selector).unbind('touchmove.move_tile');
-        });
+    TG.onTouchEnd = function (element,te_e) {
+        // Make sure we avoid multitouch on the tiles
+        if(element.attr("tile") == clicked_element.attr("tile")) {
+            TG.onUp(te_e, function () {
+                // Unbind the touchmove event as we don't need it anymore. It's always a good idea to clean the house
+                // after the iOS party!
+                $(gb_data.selector).unbind('touchmove.move_tile');
+            });
+        }
     };
 
     /**
@@ -407,7 +446,7 @@
             }
             index++;
         }
-        $(gb_selector)
+        $(gb_data.selector)
             .append(
             $("<div></div>").css({
                 position:"absolute",
