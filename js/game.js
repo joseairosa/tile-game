@@ -1,4 +1,4 @@
-// Created by: José P. Airosa for facebook puzzle code test #1
+// Created by: José P. Airosa
 // Email: me@joseairosa.com
 
 /**
